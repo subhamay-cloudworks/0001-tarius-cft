@@ -10,7 +10,8 @@ Metadata:
   Owner: Subhamay Bhattacharyya
   ProjectName: Tarius
   Modification History:
-    - 1.0.0  - May 08, 2022   -- Initial Version 
+    - 1.0.0  - May 08, 2023   -- Initial Version
+    - 1.0.1  - May 16, 2023   -- Fixed the Lambda name in the Lambda IAM Execution Role by making them all lowercase
   Resources: 
     - Two Lambda Functions (S3 Custom Resource)
   StepsToTest: |
@@ -118,6 +119,7 @@ Resources:
         - Key:  Environment
           Value: !Ref Environment
   ###################################### Custom Resource Lambda Role ###############################
+  # - 1.0.1  - May 16, 2023   -- Fixed the Lambda name in the Lambda IAM Execution Role by making them all lowercase
   S3CreateFolderCustomResourceLambdaExecutionRole:
      Type: AWS::IAM::Role
      Properties:
@@ -140,7 +142,7 @@ Resources:
              - logs:CreateLogStream
              - logs:PutLogEvents
              Effect: Allow
-             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Folder-Creation-Lambda$-{Environment}-${AWS::Region}:*'
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-s3-folder-creation-lambda-${Environment}-${AWS::Region}:*'
          PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-cloudwatch'
        - PolicyDocument:
           Version: '2012-10-17'
@@ -165,6 +167,7 @@ Resources:
         - Key:  Environment
           Value: !Ref Environment
   ###################################### S3 Notification Custom Resource Lambda ####################
+  # - 1.0.1  - May 16, 2023   -- Fixed the Lambda name in the Lambda IAM Execution Role by making them all lowercase
   S3NotificationCustomResourceLambdaFunction:
      Type: AWS::Lambda::Function
      Properties:
@@ -276,7 +279,7 @@ Resources:
              - logs:CreateLogStream
              - logs:PutLogEvents
              Effect: Allow
-             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-S3-Notification-Creation-Lambda-${Environment}-${AWS::Region}:*'
+             Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-s3-notification-creation-lambda-${Environment}-${AWS::Region}:*'
            Version: '2012-10-17'
          PolicyName: !Sub '${ProjectName}-custom-resource-policy-for-cloudwatch'
        - PolicyDocument:

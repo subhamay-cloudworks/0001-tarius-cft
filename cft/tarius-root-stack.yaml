@@ -10,7 +10,10 @@ Metadata:
   Owner: Subhamay Bhattacharyya
   ProjectName: Tarius
   Modification History:
-    - 1.0.0  - May 08, 2022   -- Initial Version 
+    - 1.0.0  - May 08, 2023   -- Initial Version
+    - 1.0.1  - May 16, 2023   -- Moved the Lambda IAM Execution Role to a nested Stack 
+                              -- Created a parameter for code repository S3 bucket.
+                              -- Parameterised the Alarm Name with the Lambda function base name.
   Resources: 
     - One SNS Topic with KMS Encryption and Email Subscription.
     - One Dead Letter Queue as Lambda Error Destination
@@ -31,6 +34,11 @@ Metadata:
       Parameters: 
         - ProjectName
         - Environment
+    #################################### Code Repository Bucket ####################################
+    - Label: 
+        default: "Code Repository Bucket:"
+      Parameters:
+        - CodeRepositoryS3Bucket
     #################################### KMS Key ###################################################
     - Label: 
         default: "KMS Configuration:"
@@ -72,7 +80,7 @@ Metadata:
     - Label: 
         default: "DynamoDB Configuration:"
       Parameters: 
-      - DynamoDBTableName
+      - DynamoDBTableBaseName
       - DynamoDBTablePartitionKey
       - DynamoDBTablePartitionKeyAttributeType
     #################################### Lambda Function ###########################################
@@ -85,14 +93,12 @@ Metadata:
         - LambdaFunctionTimeoutSecs
         - LambdaRuntime
         - LambdaFunctionMemory
-        - LambdaCodeBucket
         - LambdaCodeKey
         - LambdaReservedConcurrency
     #################################### 1. Lambda Invocations CW Alarm ############################
     - Label: 
         default: "1. CloudWatch Lambda Invocations Alarm Configuration:"
       Parameters: 
-        - AlarmNameLambdaInvocations
         - AlarmComparisonOperatorLambdaInvocations
         - AlarmThresholdLambdaInvocations
         - AlarmPeriodInSecondsLambdaInvocations
@@ -102,7 +108,6 @@ Metadata:
     - Label: 
         default: "2. CloudWatch Lambda Error Alarm Configuration:"
       Parameters: 
-        - AlarmNameLambdaErrors
         - AlarmComparisonOperatorLambdaErrors
         - AlarmThresholdLambdaErrors
         - AlarmPeriodInSecondsLambdaErrors
@@ -112,7 +117,6 @@ Metadata:
     - Label: 
         default: "3. CloudWatch Lambda Throttles Alarm Configuration:"
       Parameters: 
-        - AlarmNameLambdaThrottles
         - AlarmComparisonOperatorLambdaThrottles
         - AlarmThresholdLambdaThrottles
         - AlarmPeriodInSecondsLambdaThrottles
@@ -122,7 +126,6 @@ Metadata:
     - Label: 
         default: "4. CloudWatch Lambda Duration Alarm Configuration:"
       Parameters: 
-        - AlarmNameLambdaDuration
         - AlarmComparisonOperatorLambdaDuration
         - AlarmThresholdLambdaDuration
         - AlarmPeriodInSecondsLambdaDuration
@@ -132,7 +135,6 @@ Metadata:
     - Label: 
         default: "5. CloudWatch Lambda Concurrent Executions Alarm Configuration:"
       Parameters: 
-        - AlarmNameLambdaConcurrentExecutions
         - AlarmComparisonOperatorLambdaConcurrentExecutions
         - AlarmThresholdLambdaConcurrentExecutions
         - AlarmPeriodInSecondsLambdaConcurrentExecutions
@@ -144,6 +146,9 @@ Metadata:
         default: "Project Name."
       Environment:
         default: "Environment Name."
+      ################################## Code Repository Bucket ####################################
+      CodeRepositoryS3Bucket:
+        default: "Lambda Code S3 Bucket."
       ################################## KMS Key ###################################################
       KmsMasterKeyAlias:
         default: "KMS Key Alias."
@@ -191,7 +196,7 @@ Metadata:
       S3NotificationSuffix: 
         default: "S3 Bucket Suffix For The Event Notification."
       ################################## DynamoDB Table ############################################
-      DynamoDBTableName: 
+      DynamoDBTableBaseName: 
         default: "DynamoDB Table."
       DynamoDBTablePartitionKey:
         default: "Partition Key."
@@ -210,15 +215,11 @@ Metadata:
         default: "Lambda Function Runtime."
       LambdaFunctionMemory:
         default: "Lambda Function Memory Size."
-      LambdaCodeBucket:
-        default: "Lambda Code S3 Bucket."
       LambdaCodeKey: 
         default: "Lambda Code Zip File."
       LambdaReservedConcurrency:
         default: "Lambda Reserved Concurrency."
       ################################## 1. Lambda Invocations CW Alarm ############################
-      AlarmNameLambdaInvocations:
-        default: "Lambda Invocations Alarm."
       AlarmComparisonOperatorLambdaInvocations: 
         default: "Lambda Invocations Alarm Condition."
       AlarmThresholdLambdaInvocations: 
@@ -230,8 +231,6 @@ Metadata:
       EvaluationPeriodsForLambdaInvocations:
         default: "Lambda Invocations Alarm Evaluation Periods."
       #################################### 2. Lambda Error CW Alarm ################################
-      AlarmNameLambdaErrors:
-        default: "Lambda Errors Alarm."
       AlarmComparisonOperatorLambdaErrors: 
         default: "Lambda Errors Alarm Condition."
       AlarmThresholdLambdaErrors: 
@@ -243,8 +242,6 @@ Metadata:
       EvaluationPeriodsForLambdaErrors:
         default: "Lambda Errors Alarm Evaluation Periods."
       ################################## 3. Lambda Throttles CW Alarm ##############################
-      AlarmNameLambdaThrottles:
-        default: "Lambda Throttles Alarm."
       AlarmComparisonOperatorLambdaThrottles: 
         default: "Lambda Throttles Alarm Condition."
       AlarmThresholdLambdaThrottles: 
@@ -256,8 +253,6 @@ Metadata:
       EvaluationPeriodsForLambdaThrottles:
         default: "Lambda Throttles Alarm Evaluation Periods."
       ################################## 4. Lambda Duration CW Alarm ###############################
-      AlarmNameLambdaDuration:
-        default: "Lambda Duration Alarm."
       AlarmComparisonOperatorLambdaDuration: 
         default: "Lambda Duration Alarm Condition."
       AlarmThresholdLambdaDuration: 
@@ -269,8 +264,6 @@ Metadata:
       EvaluationPeriodsForLambdaDuration:
         default: "Lambda Duration Alarm Evaluation Periods."
       ################################## 5. Lambda Concurrent Executions CW Alarm ##################
-      AlarmNameLambdaConcurrentExecutions:
-        default: "Lambda Concurrent Executions Alarm."
       AlarmComparisonOperatorLambdaConcurrentExecutions: 
         default: "Lambda Concurrent Executions Alarm Condition."
       AlarmThresholdLambdaConcurrentExecutions: 
@@ -297,6 +290,15 @@ Parameters:
     Type: String
     AllowedValues: ["devl", "test", "prod"]
     ConstraintDescription: "The Environment must be devl / test or prod"
+  ###################################### Code Repository Bucket ####################################
+  CodeRepositoryS3Bucket:
+    Default: subhamay-projects-repository-us-east-1
+    Description: "S3 Bucket Storing The Lambda Code."
+    Type: String
+    MinLength: 10
+    MaxLength: 40
+    AllowedPattern: "[a-z][a-z0-9-.]*"
+    ConstraintDescription: "The length should be between 3 and 63, must contain only lowercase letter,numbers,dash, dot and should start with a letter."
   ###################################### KMS Key ###################################################
   KmsMasterKeyAlias:
     Default: "SB-KMS"
@@ -430,7 +432,7 @@ Parameters:
     Type: String
     AllowedPattern: '[\*\.a-z]*'
   ###################################### DynamoDB Table ############################################
-  DynamoDBTableName:
+  DynamoDBTableBaseName:
     Default: tarius-product-table
     Description: "The Name Of The Dynamodb Products Table."
     Type: String
@@ -497,14 +499,6 @@ Parameters:
     MinValue: 128
     MaxValue: 10240
     ConstraintDescription: The Lambda Memory should be between 128 and 10240.
-  LambdaCodeBucket:
-    Default: subhamay-projects-repository-us-east-1
-    Description: "S3 Bucket Storing The Lambda Code."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: "[a-z][a-z0-9-.]*"
-    ConstraintDescription: "The length should be between 3 and 63, must contain only lowercase letter,numbers,dash, dot and should start with a letter."
   LambdaCodeKey:
     Default: 0001-tarius/code/python/tarius_code.zip
     Description: "The Zip File Name Containing The Lambda Code."
@@ -520,14 +514,6 @@ Parameters:
     MinValue: 0
     MaxValue: 5  
   ###################################### 1. Lambda Invocations CW Alarm ############################
-  AlarmNameLambdaInvocations:
-    Default: lambda-function-invocations-alarm
-    Description: "The Lambda Invocations Alarm Name. The Region And Environment Will Be Added As Suffix By The Template.."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: '[a-zA-Z-]*'
-    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaInvocations:
     Default: 5
     Description: "The Cloudwatch Alarm Threshold. Number Of Lambda Executions After Which The Alarm Will Be Triggered."
@@ -562,14 +548,6 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
   ###################################### 2. Lambda Error CW Alarm ##################################
-  AlarmNameLambdaErrors:
-    Default: lambda-function-errors-alarm
-    Description: "The Lambda Errors Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: '[a-zA-Z-]*'
-    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaErrors:
     Default: 2
     Description: "The Cloudwatch Alarm Threshold.Number Of Lambda Executions After Which The Alarm Will Be Triggered."
@@ -604,14 +582,6 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
   ###################################### 3. Lambda Throttles CW Alarm ##############################
-  AlarmNameLambdaThrottles:
-    Default: lambda-function-throttles-alarm
-    Description: "The Lambda Throttles Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: '[a-zA-Z-]*'
-    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaThrottles:
     Default: 3
     Description: "The Cloudwatch Alarm Threshold.The Number Of Lambda Throttles After Which The Alarm Will Be Triggered."
@@ -646,14 +616,6 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
   ###################################### 4. Lambda Duration CW Alarm ###############################
-  AlarmNameLambdaDuration:
-    Default: lambda-function-duration-alarm
-    Description: "The Lambda Duration Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: '[a-zA-Z-]*'
-    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaDuration:
     Default: 500
     Description: "The CloudWatch Alarm Threshold.The Number Of Milliseconds The Alarm Will Be Triggered."
@@ -688,14 +650,6 @@ Parameters:
     Type: String
     AllowedValues: [GreaterThanThreshold, GreaterThanOrEqualToThreshold, LessThanThreshold, LessThanOrEqualToThreshold]
   ###################################### 5. Lambda Concurrent Executions CW Alarm ##################
-  AlarmNameLambdaConcurrentExecutions:
-    Default: lambda-function-conc-exec-alarm
-    Description: "The Lambda Concurrent Executions Alarm Name. The Region And Environment Will Be Added As Suffix By The Template."
-    Type: String
-    MinLength: 10
-    MaxLength: 40
-    AllowedPattern: '[a-zA-Z-]*'
-    ConstraintDescription: "Must be between 10 and 50 characters long and begin with a letter and can contain lowercase letter, number or hyphen (-)."
   AlarmThresholdLambdaConcurrentExecutions:
     Default: 3
     Description: "The CloudWatch Alarm Threshold.After The Number Of Concurrent Executions The Alarm Will Be Triggered."
@@ -736,7 +690,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sns-stack.yaml
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sns-stack.yaml'
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -751,7 +705,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sqs-stack.yaml
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/sqs-stack.yaml'
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -769,7 +723,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/s3-stack.yaml
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/s3-stack.yaml'
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
@@ -788,84 +742,34 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/dynamodb-stack.yaml
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/dynamodb-stack.yaml'
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-        DynamoDBTableName: !Ref DynamoDBTableName
+        DynamoDBTableBaseName: !Ref DynamoDBTableBaseName
         DynamoDBTablePartitionKey: !Ref DynamoDBTablePartitionKey 
         DynamoDBTablePartitionKeyAttributeType: !Ref DynamoDBTablePartitionKeyAttributeType
         DynamoDBTableKmsMasterKeyAlias: !Ref KmsMasterKeyAlias
       TimeoutInMinutes: 15
   ###################################### Lambda Execution Role #####################################
   TariusLambdaExecutionRole:
-    Type: AWS::IAM::Role
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
     Properties:
-      RoleName: !Ref LambdaExecutionRoleName
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Policies:
-        - PolicyName: !Ref LambdaExecutionPolicyName
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Sid: AllowCloudWatchLogStream
-              Effect: Allow
-              Action: 
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFunctionBaseName}-${Environment}-${AWS::Region}:*'
-            - Sid: AllowDynamoDBBatchWriteItem
-              Effect: Allow
-              Action: 
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-              Resource:
-                - !GetAtt TariusDynamoDBTable.Outputs.DynamoDBTableArn
-            - Sid: AllowSNSPublishMessage
-              Effect: Allow
-              Action: 
-                - sns:Publish
-              Resource:
-                - !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
-            - Sid: AllowSQSSendMessage
-              Effect: Allow
-              Action: 
-                - sqs:SendMessage
-              Resource:
-                - !GetAtt TariusSQSQueue.Outputs.SQSQueueArn
-            - Sid: AllowReadAccessToS3Bucket
-              Effect: Allow
-              Action: 
-                - s3:GetObject
-              Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}/raw-data/*'
-            - Sid: AllowWriteAccessToS3Bucket
-              Effect: Allow
-              Action: 
-                - s3:PutObject
-              Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3LandingZoneBucketBaseName}-${Environment}-${AWS::Region}/invalid-records/*'
-            - Sid: AllowKMSDecryption
-              Effect: Allow
-              Action: 
-                - kms:Decrypt
-                - kms:Encrypt
-                - kms:GenerateDataKey
-                - kms:GenerateDataKeyPair
-              Resource:
-                - !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsMasterKeyId}'
-      Tags: 
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key:  Environment
-          Value: !Ref Environment
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/iam-role-stack.yaml'
+      Parameters:  
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+        LambdaExecutionRoleName: !Ref LambdaExecutionRoleName
+        LambdaExecutionPolicyName: !Ref LambdaExecutionPolicyName
+        LambdaFunctionBaseName: !Ref LambdaFunctionBaseName
+        DynamoDBTableBaseName: !Ref DynamoDBTableBaseName
+        SNSTopicBaseName: !Ref SNSTopicBaseName
+        SQSQueueBaseName: !Ref SQSQueueBaseName
+        S3LandingZoneBucketBaseName: !Ref S3LandingZoneBucketBaseName
+        KmsMasterKeyId: !Ref KmsMasterKeyId
+      TimeoutInMinutes: 15
   ###################################### Lambda Function ###########################################
   TariusLambdaFunction:
     Type: AWS::Lambda::Function
@@ -873,10 +777,10 @@ Resources:
       Runtime: !Ref LambdaRuntime
       FunctionName: !Sub '${LambdaFunctionBaseName}-${Environment}-${AWS::Region}'
       Description: "Tarius Lambda Function to load a file from S3 to DynamoDB using event notification"
-      Role: !GetAtt TariusLambdaExecutionRole.Arn
+      Role: !GetAtt TariusLambdaExecutionRole.Outputs.LambdaExecutionRoleArn
       Handler: tarius_code.lambda_handler
       Code:
-        S3Bucket: !Ref LambdaCodeBucket
+        S3Bucket: !Ref CodeRepositoryS3Bucket
         S3Key: !Ref LambdaCodeKey
       Timeout: !Ref LambdaFunctionTimeoutSecs
       DeadLetterConfig:
@@ -888,7 +792,7 @@ Resources:
       Environment:
         Variables:
           SNS_TOPIC_ARN: !GetAtt TariusSNSTopic.Outputs.SNSTopicArn
-          DYNAMODB_TABLE_NAME: !Sub "${DynamoDBTableName}-${Environment}-${AWS::Region}"
+          DYNAMODB_TABLE_NAME: !Sub "${DynamoDBTableBaseName}-${Environment}-${AWS::Region}"
       Tags: 
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -930,37 +834,37 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/cft/nested-stacks/cloudwatch-stack.yaml
+      TemplateURL: !Sub 'https://${CodeRepositoryS3Bucket}.s3.amazonaws.com/0001-tarius/cft/nested-stacks/cloudwatch-stack.yaml'
       Parameters:  
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
         LambdaFunctionName: !Sub '${LambdaFunctionBaseName}-${Environment}-${AWS::Region}'
         SNSTopicName: !Sub '${SNSTopicBaseName}-${Environment}-${AWS::Region}'
-        AlarmNameLambdaInvocations: !Ref AlarmNameLambdaInvocations
+        AlarmNameLambdaInvocations: !Sub '${LambdaFunctionBaseName}-invocations-alarm'
         AlarmThresholdLambdaInvocations: !Ref AlarmThresholdLambdaInvocations
         AlarmPeriodInSecondsLambdaInvocations: !Ref AlarmPeriodInSecondsLambdaInvocations
         DatapointsToAlarmLambdaInvocations: !Ref DatapointsToAlarmLambdaInvocations
         EvaluationPeriodsForLambdaInvocations: !Ref EvaluationPeriodsForLambdaInvocations
         AlarmComparisonOperatorLambdaInvocations: !Ref AlarmComparisonOperatorLambdaInvocations
-        AlarmNameLambdaErrors: !Ref AlarmNameLambdaErrors
+        AlarmNameLambdaErrors: !Sub '${LambdaFunctionBaseName}-errors-alarm'
         AlarmThresholdLambdaErrors: !Ref AlarmThresholdLambdaErrors
         AlarmPeriodInSecondsLambdaErrors: !Ref AlarmPeriodInSecondsLambdaErrors
         DatapointsToAlarmLambdaErrors: !Ref DatapointsToAlarmLambdaErrors
         EvaluationPeriodsForLambdaErrors: !Ref EvaluationPeriodsForLambdaErrors
         AlarmComparisonOperatorLambdaErrors: !Ref AlarmComparisonOperatorLambdaErrors
-        AlarmNameLambdaThrottles: !Ref AlarmNameLambdaThrottles
+        AlarmNameLambdaThrottles: !Sub '${LambdaFunctionBaseName}-throttles-alarm'
         AlarmThresholdLambdaThrottles: !Ref AlarmThresholdLambdaThrottles
         AlarmPeriodInSecondsLambdaThrottles: !Ref AlarmPeriodInSecondsLambdaThrottles
         DatapointsToAlarmLambdaThrottles: !Ref DatapointsToAlarmLambdaThrottles
         EvaluationPeriodsForLambdaThrottles: !Ref EvaluationPeriodsForLambdaThrottles
         AlarmComparisonOperatorLambdaThrottles: !Ref AlarmComparisonOperatorLambdaThrottles
-        AlarmNameLambdaDuration: !Ref AlarmNameLambdaDuration
+        AlarmNameLambdaDuration: !Sub '${LambdaFunctionBaseName}-duration-alarm'
         AlarmThresholdLambdaDuration: !Ref AlarmThresholdLambdaDuration
         AlarmPeriodInSecondsLambdaDuration: !Ref AlarmPeriodInSecondsLambdaDuration
         DatapointsToAlarmLambdaDuration: !Ref DatapointsToAlarmLambdaDuration
         EvaluationPeriodsForLambdaDuration: !Ref EvaluationPeriodsForLambdaDuration
         AlarmComparisonOperatorLambdaDuration: !Ref AlarmComparisonOperatorLambdaDuration
-        AlarmNameLambdaConcurrentExecutions: !Ref AlarmNameLambdaConcurrentExecutions
+        AlarmNameLambdaConcurrentExecutions: !Sub '${LambdaFunctionBaseName}-conc-exec-alarm'
         AlarmThresholdLambdaConcurrentExecutions: !Ref AlarmThresholdLambdaConcurrentExecutions
         AlarmPeriodInSecondsLambdaConcurrentExecutions: !Ref AlarmPeriodInSecondsLambdaConcurrentExecutions
         DatapointsToAlarmLambdaConcurrentExecutions: !Ref DatapointsToAlarmLambdaConcurrentExecutions
@@ -988,7 +892,7 @@ Outputs:
     Value: !GetAtt TariusDynamoDBTable.Outputs.DynamoDBTableArn
   TariusLambdaExecutionRoleArn:
     Description: Tarius Lambda Execution Role Arn
-    Value: !GetAtt TariusLambdaExecutionRole.Arn
+    Value: !GetAtt TariusLambdaExecutionRole.Outputs.LambdaExecutionRoleArn
   TariusLambdaFunctionArn: 
     Description: Tarius Lambda Function Arn
     Value: !GetAtt TariusLambdaFunction.Arn
