@@ -3,6 +3,12 @@
 Created on Wed Dec 10 08:41:01 2022
 
 @author: Subhamay Bhattacharyya
+
+Bug Fixes:
+Ver     Date          Description
+------  ------------  -------------------------------------
+1.0.1   May 23, 2023  Fixed the s3_key_invalid_records issue 
+                      [ERROR] UnboundLocalError: local variable 's3_key_invalid_records' referenced before assignment
 """
 
 import json
@@ -10,6 +16,8 @@ import logging
 import boto3
 import csv
 import os
+from datetime import datetime
+
 
 # Load the exceptions for error handling
 from botocore.exceptions import ClientError, ParamValidationError
@@ -157,6 +165,9 @@ def download_s3_data(bucket, key):
 def lambda_handler(event, context):
     
     event_source = get_event_source(event)
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    raise Exception(f"{current_time} :: Something bad happened.") 
     
     if event_source == "s3":
         records_processed = 0
@@ -195,6 +206,7 @@ def lambda_handler(event, context):
                 
         # If there are any failed records then upload the invalid records to the S3 bucket under the 
         # invalid-records/ folder
+        s3_key_invalid_records = None ## Added on May 23, 2023
         if len(invalid_items) > 0:
             s3_key_invalid_records = f"invalid-records/{context.aws_request_id}/invalid_items.json"
             response = upload_to_s3(s3_bucket_name,s3_key_invalid_records, json.dumps(invalid_items))
@@ -209,4 +221,3 @@ def lambda_handler(event, context):
         "statsCode": 200,
         "Message": f"File s3://{s3_bucket_name}/{s3_key} processed successfully !"
     }
-    
