@@ -14,6 +14,7 @@ Metadata:
     - 1.0.1  - May 16, 2023   -- Moved the Lambda IAM Execution Role to a nested Stack 
                               -- Created a parameter for code repository S3 bucket.
                               -- Parameterised the Alarm Name with the Lambda function base name.
+    - 1.0.2  - May 23, 2023   -- Changed the SNS Subscription Email Id
   Resources: 
     - One SNS Topic with KMS Encryption and Email Subscription.
     - One Dead Letter Queue as Lambda Error Destination
@@ -334,7 +335,7 @@ Parameters:
     AllowedPattern: "[a-zA-Z0-9-. _]*"
     ConstraintDescription: "The length should be between 30 and 200, must alphanumeric character, space, dot dash or underscore."
   SNSSubscriptionEmail:
-    Default: "subhamay.aws@gmail.com"
+    Default: "subhamay.aws@mailinator.com"
     Description: "The Subscription Email For The Sns Topic."
     Type: String
     MinLength: 10

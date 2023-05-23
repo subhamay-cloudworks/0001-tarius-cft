@@ -1,10 +1,10 @@
 # Project Tarius: AWS Serverlsss Real Time Data Load to DynamoDB
 
-The user / producer uploads a csv source file to the landing zone S3 bucket. A Lambda function is triggered using S3 event notification and loads it to a DynamoDB table. The entire stack is created using CFT (CloudFormation) template. The SNS, S3 Bucket and DynamoDB tables are encrypted using Customer Managed KMS Key.
+The user / producer uploads a csv source file to the landing zone S3 bucket. A Lambda function is triggered using S3 event notification and loads it to a DynamoDB table. The entire stack is created using CFT (CloudFormation template). The SNS, S3 Bucket and DynamoDB tables are encrypted using Customer Managed KMS Key.
 
 ## Description
 
-This sample project demonstrate the capability of loading a .csv file into a DynamoDB table using a Lambda function. The Lambda function is triggered using an Event Source Notification created in the S3 bucket. Once the data loads successfully into the table a SNS notification is published and end users are notified via email subscriibed to the SNS Topic. CloudWatch Alarms are created to demonstrate the different metrics on the Lambda function. The S3 Bucket, SNS Topic and the DynamoDB tables are encrypted using Customer Managed KMS Key. The entire stack (excluding the KMS Key is created using CloudFormation templates).
+This sample project demonstrate the capability of loading a .csv file into a DynamoDB table using a Lambda function. The Lambda function is triggered using an Event Source Notification created on the S3 bucket. Once the data loads successfully into the table a SNS notification is published and end users are notified via email subscriibed to the SNS Topic. CloudWatch Alarms are created to demonstrate the different metrics on the Lambda function. The S3 Bucket, SNS Topic and the DynamoDB tables are encrypted using Customer Managed KMS Key. The entire stack (excluding the KMS Key) is created using CloudFormation templates.
 
 ![Project Tauris - Design Diagram](https://subhamay-projects-repository-us-east-1.s3.amazonaws.com/0001-tarius/tarius-architecture-diagram.png)
 
@@ -25,8 +25,10 @@ This sample project demonstrate the capability of loading a .csv file into a Dyn
 * Upload the following YAML templates to tarius/cft/nested-stacks
     * cloudwatch-stack.yaml
     * dynamodb-stack.yaml
+    * iam-role-stack.yaml
     * s3-stack.yaml
     * sns-stack.yaml
+    * sqs-stack
 * Upload the following YAML templates to tarius/cft/cross-stacks
     * custom-resource-lambda-stack.yaml
 * Upload the following YAML templates to tarius/cft/
@@ -42,10 +44,24 @@ This sample project demonstrate the capability of loading a .csv file into a Dyn
 ```
 aws s3 cp products.csv <s3 bucket uri>/data/
 ```
+* Alternatively, the data file can be uploaded to the S3 bucket from AWS Console as well and verify the data in the DynamoDB table.
 
+* To test the SQS Dead Letter Queue, put an exception in the handler after the first logger statement as   
+    
+```
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    raise Exception(f"{current_time} :: Something bad happened.") 
+```
+and asynchronously invoke the lambda using the follwing command:
+```
+aws lambda invoke --invocation-type Event --function-name tarius-lambda-devl-us-east-1 --region us-east-1 --payload '{ "key1": "value1","key2":"value2" }' --cli-binary-format raw-in-base64-out response.json --profile default
+```
+
+After 2 failed attempts if the lambda fails for the third time, then the event is pushed into the dead letter queue.
 ## Help
 
-Post message in my blog (https://subhamay.blog)
+Post message in my blog (https://blog.subhamay.com)
 
 
 ## Authors
@@ -56,11 +72,10 @@ Subhamay Bhattacharyya  - [subhamoyb@yahoo.com](https://subhamay.blog)
 
 ## Version History
 
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
 * 0.1
     * Initial Release
+* 0.2
+    * Fixed the Python Lambda bug and some typo errors.
 
 ## License
 

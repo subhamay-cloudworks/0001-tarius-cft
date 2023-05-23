@@ -10,6 +10,7 @@ Metadata:
   ProjectName: Tarius
   Modification History:
     - 1.0.0  - May 08, 2023   -- Initial Version 
+    - 1.0.1  - May 23, 2023   -- Converted the alarm descrition to all lowercase
   Resources: 
     - Five CloudWatch Alarms For Lambda Fucntion.
   StepsToTest: |
@@ -406,7 +407,7 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmName: !Sub '${AlarmNameLambdaInvocations}-${Environment}-${AWS::Region}'
-      AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function invocations" 
+      AlarmDescription: !Sub "${ProjectName} - alarm for number lambda function invocations" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
       ComparisonOperator: !Ref AlarmComparisonOperatorLambdaInvocations
@@ -427,7 +428,7 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmName: !Sub '${AlarmNameLambdaErrors}-${Environment}-${AWS::Region}'
-      AlarmDescription: !Sub "${ProjectName} - Alarm for number Lambda function errors" 
+      AlarmDescription: !Sub "${ProjectName} - alarm for number lambda function errors" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
       ComparisonOperator: !Ref AlarmComparisonOperatorLambdaErrors
@@ -448,7 +449,7 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmName: !Sub '${AlarmNameLambdaThrottles}-${Environment}-${AWS::Region}'
-      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function throttles" 
+      AlarmDescription: !Sub "${ProjectName} - alarm for lambda function throttles" 
       AlarmActions: 
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
       ComparisonOperator: !Ref AlarmComparisonOperatorLambdaThrottles
@@ -469,7 +470,7 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmName: !Sub '${AlarmNameLambdaDuration}-${Environment}-${AWS::Region}'
-      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda function duration" 
+      AlarmDescription: !Sub "${ProjectName} - alarm for lambda function duration" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
       ComparisonOperator: !Ref AlarmComparisonOperatorLambdaDuration
@@ -490,7 +491,7 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmName: !Sub '${AlarmNameLambdaConcurrentExecutions}-${Environment}-${AWS::Region}'
-      AlarmDescription: !Sub "${ProjectName} - Alarm for Lambda concurrent executions" 
+      AlarmDescription: !Sub "${ProjectName} - alarm for lambda concurrent executions" 
       AlarmActions:
         - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicName}'
       ComparisonOperator: !Ref AlarmComparisonOperatorLambdaConcurrentExecutions
