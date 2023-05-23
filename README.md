@@ -68,7 +68,7 @@ Post message in my blog (https://blog.subhamay.com)
 
 Contributors names and contact info
 
-Subhamay Bhattacharyya  - [subhamoyb@yahoo.com](https://subhamay.blog)
+Subhamay Bhattacharyya  - [subhamay.aws@gmail.com](https://blog.subhamay.com)
 
 ## Version History
 
